@@ -1,0 +1,8 @@
+# global variables
+sample: "A10"
+base_dir: "$HOME/mgatk_v_mquad"
+out_dir: "{base_dir}/outs"
+
+# epianeufinder pipeline paths
+blacklist: "$HOME/atac_practice/reference/hg38.full.blacklist.bed"
+cleaned_frags: "$HOME/epiAnuA10/frags/A10/fragments.cleaned.tsv"
