@@ -13,14 +13,14 @@ OUT_DIR = os.path.expanduser(os.path.expandvars(OUT_DIR))
 BLACKLIST = os.path.expanduser(os.path.expandvars(config["blacklist"]))
 CLEANED_FRAGS = os.path.expanduser(os.path.expandvars(config["cleaned_frags"]))
 
+# mgatk paths
+BAM = os.path.expanduser(os.path.expandvars(config["bam"]))
+
 
 # --------- Rules ---------
 rule all:
     input:
-        os.path.join(
-            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results",
-            f"{SAMPLE}_cells_for_mquad.tsv"
-        )
+        done=os.path.join(OUT_DIR, SAMPLE, "mgatk", ".mgatk_done")
 
 
 rule run_epi:
@@ -87,4 +87,51 @@ rule get_epi_clones:
           --results_table "{input.results_table}" \
           --out_dir "{params.out_dir}" \
           2>&1 | tee {log}
+        """
+
+rule mgatk:
+    """
+    Process mitochondrial data with mgatk for the epi-selected (cancerous) cells.
+    """
+    conda:
+        "../../envs/mgatk.yml"
+    input:
+        bam=BAM,
+        barcodes=os.path.join(
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", f"{SAMPLE}_cells_for_mquad.tsv")
+    output:
+        done=os.path.join(OUT_DIR, SAMPLE, "mgatk", ".mgatk_done")
+    params:
+        outdir=os.path.join(OUT_DIR, SAMPLE, "mgatk"),
+        sample_name=SAMPLE
+    threads: 16
+    resources:
+        mem_mb=64000
+    log:
+        os.path.join(OUT_DIR, SAMPLE, "logs", "mgatk.log")
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "{params.outdir}" "$(dirname "{log}")"
+
+        (
+          echo "==== mgatk START $(date) ===="
+          echo "BAM: {input.bam}"
+          echo "BARCODES: {input.barcodes}"
+          echo "OUTDIR: {params.outdir}"
+          echo
+
+          mgatk tenx \
+            -i "{input.bam}" \
+            -b "{input.barcodes}" \
+            -bt CB \
+            -n "{params.sample_name}" \
+            -o "{params.outdir}" \
+            --ncores {threads} \
+            --keep-temp-files
+
+          echo "==== mgatk END $(date) ===="
+        ) &> "{log}"
+
+        touch "{output.done}"
         """
