@@ -19,6 +19,14 @@ parser.add_argument(
     required=True,
     help="Directory to write processed mgatk summaries (four TSVs)"
 )
+
+# NEW: pass sample directly (single-sample workflow; no need to derive from paths)
+parser.add_argument(
+    "--sample",
+    required=True,
+    help="Sample name prefix used by mgatk outputs (e.g., A10)"
+)
+
 args = parser.parse_args()
 
 # Normalize paths (useful for logs)
@@ -29,7 +37,9 @@ print(f"mgatk_dir: {args.mgatk_dir}")
 print(f"out_dir: {args.out_dir}")
 
 # Derive sample_id robustly: .../mgatk/<sample>/final -> <sample>
-sample_id = os.path.basename(os.path.dirname(args.mgatk_dir))
+# OLD (removed): sample_id = os.path.basename(os.path.dirname(args.mgatk_dir))
+# NEW: use the provided sample name
+sample_id = args.sample
 
 # Ensure base output directory exists
 out_dir = args.out_dir
