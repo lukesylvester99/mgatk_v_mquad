@@ -16,6 +16,9 @@ CLEANED_FRAGS = os.path.expanduser(os.path.expandvars(config["cleaned_frags"]))
 # mgatk paths
 BAM = os.path.expanduser(os.path.expandvars(config["bam"]))
 
+#vireo trunk analysis paths
+SCRIPTS_DIR = os.path.abspath(os.path.join(BASE_DIR, "workflows", "scripts"))
+VIREO_TRUNK_PY = os.path.join(SCRIPTS_DIR, "vireo_trunk.py")
 
 # --------- Rules ---------
 rule all:
@@ -38,7 +41,24 @@ rule all:
         barcodes=os.path.join(OUT_DIR, SAMPLE, "mquad", "barcodes_epi_x_depth.tsv"),
         vcf_keep=os.path.join(OUT_DIR, SAMPLE, "mquad", "cellsnp_bulk_mtSNP", "cellSNP.base.filtered_to_mgatk.vcf.gz"),
         vcf_keep_tbi=os.path.join(OUT_DIR, SAMPLE, "mquad", "cellsnp_bulk_mtSNP", "cellSNP.base.filtered_to_mgatk.vcf.gz.tbi"),
-        vireo_log=os.path.join(OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo", "fit_mito_clones.log")
+        vireo_log=os.path.join(OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo", "fit_mito_clones.log"),
+
+        # trunk vireo outputs (saved under vireo_trunk_analysis/vireo/)
+        trunk_mean_af=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo_trunk_analysis", "vireo", "mean_AF.png"
+        ),
+        trunk_heatmap=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo_trunk_analysis", "vireo", "AF_heatmap.png"
+        ),
+        trunk_clone_prob=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo_trunk_analysis", "vireo", "clone_id_prob.tsv"
+        ),
+        trunk_clone_assign=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo_trunk_analysis", "vireo", "clone_assignments.tsv"
+        ),
+        trunk_beta_mu=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo_trunk_analysis", "vireo", "clone_beta_mu_estimated_AF.tsv"
+        )
 
 
 rule run_epi:
@@ -371,3 +391,109 @@ rule vireo:
         touch "{output.done}"
         """
 
+rule vireo_trunk:
+    """
+    Reuse existing vireo clone assignments (from mquad run) to visualize/emit
+    trunk-candidate mtSNP patterns by:
+      1) taking the mgatk-filtered bulk VCF (cellSNP.base.filtered_to_mgatk.vcf.gz)
+      2) removing mquad-informative variants (passed_variant_names.txt)
+      3) re-running cellSNP-lite mode 1a to generate new AD/DP matrices
+      4) running vireo_trunk.py on those new matrices with fixed clone labels
+    """
+    conda:
+        "../../envs/mquad.yml"
+    input:
+        bam=BAM,
+
+        # barcode list used for per-cell genotyping (already produced by cellsnp rule)
+        barcodes=os.path.join(OUT_DIR, SAMPLE, "mquad", "barcodes_epi_x_depth.tsv"),
+
+        # mgatk-filtered bulk VCF produced by cellsnp rule
+        vcf_mgatk=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "cellsnp_bulk_mtSNP", "cellSNP.base.filtered_to_mgatk.vcf.gz"
+        ),
+        vcf_mgatk_tbi=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "cellsnp_bulk_mtSNP", "cellSNP.base.filtered_to_mgatk.vcf.gz.tbi"
+        ),
+
+        # list of mquad-informative variants to remove (lines like 14783T>C)
+        mquad_pass=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt", "passed_variant_names.txt"
+        ),
+
+        # fixed clone assignments from original vireo (mquad-based)
+        clone_assign=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo", "clone_assignments.tsv"
+        ),
+
+        # scripts
+        trunk_sh=os.path.join(SCRIPTS_DIR, "vireo_trunk.sh"),
+        trunk_py=VIREO_TRUNK_PY,
+
+        # ensure upstream clone-fitting finished (keeps ordering consistent)
+        vireo_done=os.path.join(OUT_DIR, SAMPLE, "mquad", ".vireo_done")
+    output:
+        mean_af=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt",
+            "vireo_trunk_analysis", "vireo", "mean_AF.png"
+        ),
+        heatmap=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt",
+            "vireo_trunk_analysis", "vireo", "AF_heatmap.png"
+        ),
+        clone_prob=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt",
+            "vireo_trunk_analysis", "vireo", "clone_id_prob.tsv"
+        ),
+        clone_assign=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt",
+            "vireo_trunk_analysis", "vireo", "clone_assignments.tsv"
+        ),
+        beta_mu=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt",
+            "vireo_trunk_analysis", "vireo", "clone_beta_mu_estimated_AF.tsv"
+        )
+    params:
+        workdir=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo_trunk_analysis"
+        ),
+        mt_contig="chrM"
+    threads: 8
+    resources:
+        mem_mb=16000
+    log:
+        os.path.join(OUT_DIR, SAMPLE, "logs", "vireo_trunk.log")
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "{params.workdir}" "$(dirname "{log}")"
+
+        (
+          echo "==== vireo_trunk START $(date) ===="
+          echo "WORKDIR: {params.workdir}"
+          echo "BAM: {input.bam}"
+          echo "BARCODES: {input.barcodes}"
+          echo "VCF_MGATK: {input.vcf_mgatk}"
+          echo "MQUAD_PASS: {input.mquad_pass}"
+          echo "CLONE_ASSIGN: {input.clone_assign}"
+          echo "TRUNK_SH: {input.trunk_sh}"
+          echo "TRUNK_PY: {input.trunk_py}"
+          echo "THREADS: {threads}"
+          echo "MT_CONTIG: {params.mt_contig}"
+          echo
+
+          bash "{input.trunk_sh}" \
+            "{input.bam}" \
+            "{input.barcodes}" \
+            "{input.vcf_mgatk}" \
+            "{input.mquad_pass}" \
+            "{input.clone_assign}" \
+            "{params.workdir}" \
+            "{input.trunk_py}" \
+            "{threads}" \
+            "{params.mt_contig}"
+
+          echo
+          echo "==== vireo_trunk END $(date) ===="
+        ) &> "{log}"
+        """
