@@ -98,7 +98,7 @@ plot_karyo_annotated(
 # --------
 # Cancerous barcode list for downstream (epi clone IDs 2, 3, 4)
 # --------
-cnv_keep <- c(2, 3, 4)
+cnv_keep <- c(1, 2, 3, 4)
 cnv_cells <- subclones$cell[subclones$subclone %in% cnv_keep]
 
 cnv_tsv <- file.path(out_dir, paste0(sample, "_cells_for_mquad.tsv"))
