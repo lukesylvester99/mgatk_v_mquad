@@ -25,27 +25,27 @@ rule all:
     input:
         # --- run_epi outputs ---
         epi_cnv_calls=os.path.join(
-            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "cnv_calls.rds"
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results","cnv_calls.rds"
         ),
         epi_counts_gc_corrected=os.path.join(
-            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "counts_gc_corrected.rds"
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "counts_gc_corrected.rds"
         ),
         epi_count_summary=os.path.join(
-            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "count_summary.rds"
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "count_summary.rds"
         ),
         epi_karyogram=os.path.join(
-            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "Karyogram.png"
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "Karyogram.png"
         ),
         epi_results_gc_corrected=os.path.join(
-            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "results_gc_corrected.rds"
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "results_gc_corrected.rds"
         ),
         epi_results_table=os.path.join(
-            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "results_table.tsv"
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "results_table.tsv"
         ),
 
         # --- get_epi_clones output ---
         epi_cancerous_cells=os.path.join(
-            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", f"{SAMPLE}_cells_for_mquad.tsv"
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results",f"{SAMPLE}_cells_for_mquad.tsv"
         ),
 
         # --- mgatk output ---
@@ -106,12 +106,12 @@ rule run_epi:
     params:
         outdir=os.path.join(OUT_DIR, SAMPLE, "epi_results")
     output:
-        cnv_calls            = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "cnv_calls.rds"),
-        counts_gc_corrected  = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "counts_gc_corrected.rds"),
-        count_summary        = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "count_summary.rds"),
-        karyogram            = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "Karyogram.png"),
-        results_gc_corrected = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "results_gc_corrected.rds"),
-        results_table        = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "results_table.tsv")
+        cnv_calls            = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "cnv_calls.rds"),
+        counts_gc_corrected  = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "counts_gc_corrected.rds"),
+        count_summary        = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "count_summary.rds"),
+        karyogram            = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "Karyogram.png"),
+        results_gc_corrected = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "results_gc_corrected.rds"),
+        results_table        = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "results_table.tsv")
     threads: 16
     conda:
         "../../envs/epi.yml"
@@ -136,15 +136,15 @@ rule get_epi_clones:
     """Run epiAneufinder clone calling and export cancerous cell barcodes."""
     input:
         results_table=os.path.join(
-            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "results_table.tsv"
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "results_table.tsv"
         ),
         r_script="../scripts/get_epi_clones.R"
     params:
-        out_dir=os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results")
+        out_dir=os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results")
     output:
         cancerous_cells=os.path.join(
             OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results",
-            f"{SAMPLE}_cells_for_mquad.tsv"
+            "epiAneufinder_results", f"{SAMPLE}_cells_for_mquad.tsv"
         )
     threads: 16
     conda:
@@ -172,7 +172,7 @@ rule mgatk:
     input:
         bam=BAM,
         barcodes=os.path.join(
-            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", f"{SAMPLE}_cells_for_mquad.tsv")
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", f"{SAMPLE}_cells_for_mquad.tsv")
     output:
         done=os.path.join(OUT_DIR, SAMPLE, "mgatk", ".mgatk_done"),
         depth=os.path.join(OUT_DIR, SAMPLE, "mgatk", "final", f"{SAMPLE}.depthTable.txt"),
@@ -283,7 +283,7 @@ rule cellsnp:
         bam=BAM,
         epi_barcodes=os.path.join(
             OUT_DIR, SAMPLE,
-            "epi_results", "epiAneufinder_results",
+            "epi_results", "epiAneufinder_results", "epiAneufinder_results",
             f"{SAMPLE}_cells_for_mquad.tsv"
         ),
         depth_cells=os.path.join(
