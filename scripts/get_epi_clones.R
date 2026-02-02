@@ -118,6 +118,8 @@ cnv_keep <- c(1, 2, 3, 4)
 cnv_cells <- subclones$cell[subclones$subclone %in% cnv_keep]
 
 cnv_tsv <- file.path(out_dir, paste0(sample, "_cells_for_mquad.tsv"))
-writeLines(c("cell_barcode", cnv_cells), con = cnv_tsv)
+cnv_cells <- sub("^cell-", "", cnv_cells) # remove "cell-" prefix if present
+
+writeLines(unique(cnv_cells), cnv_tsv)
 
 message("Done. Outputs written to: ", out_dir)

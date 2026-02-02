@@ -198,6 +198,8 @@ rule mgatk:
           echo "OUTDIR: {params.outdir}"
           echo
 
+          cd "{params.outdir}"
+
           mgatk tenx \
             -i "{input.bam}" \
             -b "{input.barcodes}" \
