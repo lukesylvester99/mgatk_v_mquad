@@ -1,6 +1,6 @@
 # global variables
 sample: "A10"
-base_dir: "$HOME/mgatk_v_mquad_A10"
+base_dir: "$HOME/mgatk_v_mquad_A10_all"
 out_dir: "{base_dir}/outs"
 
 # epianeufinder pipeline paths

@@ -23,27 +23,63 @@ VIREO_TRUNK_PY = os.path.join(SCRIPTS_DIR, "vireo_trunk.py")
 # --------- Rules ---------
 rule all:
     input:
-        # existing
-        done=os.path.join(OUT_DIR, SAMPLE, "mgatk", ".mgatk_done"),
+        # --- run_epi outputs ---
+        epi_cnv_calls=os.path.join(
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results","cnv_calls.rds"
+        ),
+        epi_counts_gc_corrected=os.path.join(
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "counts_gc_corrected.rds"
+        ),
+        epi_count_summary=os.path.join(
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "count_summary.rds"
+        ),
+        epi_karyogram=os.path.join(
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "Karyogram.png"
+        ),
+        epi_results_gc_corrected=os.path.join(
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "results_gc_corrected.rds"
+        ),
+        epi_results_table=os.path.join(
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "results_table.tsv"
+        ),
 
-        # process_mgatk outputs (you already have these rules)
-        cells=os.path.join(OUT_DIR, SAMPLE, "process_mgatk", "cells_passing_depth.tsv"),
-        varfilt=os.path.join(OUT_DIR, SAMPLE, "process_mgatk", "variant_stats_filtered.tsv"),
-        hetfilt=os.path.join(OUT_DIR, SAMPLE, "process_mgatk", "cell_heteroplasmy_filtered.tsv"),
-        summary=os.path.join(OUT_DIR, SAMPLE, "process_mgatk", "variant_summary.tsv"),
+        # --- get_epi_clones output ---
+        epi_cancerous_cells=os.path.join(
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results",f"{SAMPLE}_cells_for_mquad.tsv"
+        ),
 
-        # new mquad pipeline staged outputs
+        # --- mgatk output ---
+        mgatk_done=os.path.join(OUT_DIR, SAMPLE, "mgatk", ".mgatk_done"),
+
+        # --- process_mgatk outputs ---
+        mgatk_cells=os.path.join(OUT_DIR, SAMPLE, "process_mgatk", "cells_passing_depth.tsv"),
+        mgatk_varfilt=os.path.join(OUT_DIR, SAMPLE, "process_mgatk", "variant_stats_filtered.tsv"),
+        mgatk_hetfilt=os.path.join(OUT_DIR, SAMPLE, "process_mgatk", "cell_heteroplasmy_filtered.tsv"),
+        mgatk_summary=os.path.join(OUT_DIR, SAMPLE, "process_mgatk", "variant_summary.tsv"),
+
+        # --- cellsnp outputs ---
+        cellsnp_barcodes=os.path.join(OUT_DIR, SAMPLE, "mquad", "barcodes_epi_x_depth.tsv"),
+        cellsnp_vcf_keep=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "cellsnp_bulk_mtSNP", "cellSNP.base.filtered_to_mgatk.vcf.gz"
+        ),
+        cellsnp_vcf_keep_tbi=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "cellsnp_bulk_mtSNP", "cellSNP.base.filtered_to_mgatk.vcf.gz.tbi"
+        ),
         cellsnp_done=os.path.join(OUT_DIR, SAMPLE, "mquad", ".cellsnp_done"),
+
+        # --- mquad output ---
         mquad_done=os.path.join(OUT_DIR, SAMPLE, "mquad", ".mquad_done"),
+
+        # --- vireo outputs ---
         vireo_done=os.path.join(OUT_DIR, SAMPLE, "mquad", ".vireo_done"),
+        vireo_fit_log=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo", "fit_mito_clones.log"
+        ),
+        vireo_clone_assign=os.path.join(
+            OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo", "clone_assignments.tsv"
+        ),
 
-        # useful concrete artifacts
-        barcodes=os.path.join(OUT_DIR, SAMPLE, "mquad", "barcodes_epi_x_depth.tsv"),
-        vcf_keep=os.path.join(OUT_DIR, SAMPLE, "mquad", "cellsnp_bulk_mtSNP", "cellSNP.base.filtered_to_mgatk.vcf.gz"),
-        vcf_keep_tbi=os.path.join(OUT_DIR, SAMPLE, "mquad", "cellsnp_bulk_mtSNP", "cellSNP.base.filtered_to_mgatk.vcf.gz.tbi"),
-        vireo_log=os.path.join(OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo", "fit_mito_clones.log"),
-
-        # trunk vireo outputs (saved under vireo_trunk_analysis/vireo/)
+        # --- vireo_trunk outputs ---
         trunk_mean_af=os.path.join(
             OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo_trunk_analysis", "vireo", "mean_AF.png"
         ),
@@ -70,12 +106,12 @@ rule run_epi:
     params:
         outdir=os.path.join(OUT_DIR, SAMPLE, "epi_results")
     output:
-        cnv_calls            = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "cnv_calls.rds"),
-        counts_gc_corrected  = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "counts_gc_corrected.rds"),
-        count_summary        = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "count_summary.rds"),
-        karyogram            = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "Karyogram.png"),
-        results_gc_corrected = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "results_gc_corrected.rds"),
-        results_table        = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "results_table.tsv")
+        cnv_calls            = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "cnv_calls.rds"),
+        counts_gc_corrected  = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "counts_gc_corrected.rds"),
+        count_summary        = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "count_summary.rds"),
+        karyogram            = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "Karyogram.png"),
+        results_gc_corrected = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "results_gc_corrected.rds"),
+        results_table        = os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "results_table.tsv")
     threads: 16
     conda:
         "../../envs/epi.yml"
@@ -100,15 +136,15 @@ rule get_epi_clones:
     """Run epiAneufinder clone calling and export cancerous cell barcodes."""
     input:
         results_table=os.path.join(
-            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "results_table.tsv"
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", "results_table.tsv"
         ),
         r_script="../scripts/get_epi_clones.R"
     params:
-        out_dir=os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results")
+        out_dir=os.path.join(OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results")
     output:
         cancerous_cells=os.path.join(
             OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results",
-            f"{SAMPLE}_cells_for_mquad.tsv"
+            "epiAneufinder_results", f"{SAMPLE}_cells_for_mquad.tsv"
         )
     threads: 16
     conda:
@@ -136,9 +172,12 @@ rule mgatk:
     input:
         bam=BAM,
         barcodes=os.path.join(
-            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", f"{SAMPLE}_cells_for_mquad.tsv")
+            OUT_DIR, SAMPLE, "epi_results", "epiAneufinder_results", "epiAneufinder_results", f"{SAMPLE}_cells_for_mquad.tsv")
     output:
-        done=os.path.join(OUT_DIR, SAMPLE, "mgatk", ".mgatk_done")
+        done=os.path.join(OUT_DIR, SAMPLE, "mgatk", ".mgatk_done"),
+        depth=os.path.join(OUT_DIR, SAMPLE, "mgatk", "final", f"{SAMPLE}.depthTable.txt"),
+        var=os.path.join(OUT_DIR, SAMPLE, "mgatk", "final", f"{SAMPLE}.variant_stats.tsv.gz"),
+        het=os.path.join(OUT_DIR, SAMPLE, "mgatk", "final", f"{SAMPLE}.cell_heteroplasmic_df.tsv.gz")
     params:
         outdir=os.path.join(OUT_DIR, SAMPLE, "mgatk"),
         sample_name=SAMPLE
@@ -159,6 +198,8 @@ rule mgatk:
           echo "BARCODES: {input.barcodes}"
           echo "OUTDIR: {params.outdir}"
           echo
+
+          cd "{params.outdir}"
 
           mgatk tenx \
             -i "{input.bam}" \
@@ -245,7 +286,7 @@ rule cellsnp:
         bam=BAM,
         epi_barcodes=os.path.join(
             OUT_DIR, SAMPLE,
-            "epi_results", "epiAneufinder_results",
+            "epi_results", "epiAneufinder_results", "epiAneufinder_results",
             f"{SAMPLE}_cells_for_mquad.tsv"
         ),
         depth_cells=os.path.join(
@@ -314,7 +355,8 @@ rule mquad:
         done=os.path.join(OUT_DIR, SAMPLE, "mquad", ".cellsnp_done"),
         script="../scripts/mquad.sh"
     output:
-        done=os.path.join(OUT_DIR, SAMPLE, "mquad", ".mquad_done")
+        done=os.path.join(OUT_DIR, SAMPLE, "mquad", ".mquad_done"),
+        passed=os.path.join(OUT_DIR, SAMPLE, "mquad", "mquad_mt", "passed_variant_names.txt")
     params:
         cellsnp_out=os.path.join(OUT_DIR, SAMPLE, "mquad", "cellsnp_per_cell_mtSNP"),
         mquad_out=os.path.join(OUT_DIR, SAMPLE, "mquad", "mquad_mt")
@@ -358,7 +400,8 @@ rule vireo:
         script="../scripts/vireo.sh"
     output:
         done=os.path.join(OUT_DIR, SAMPLE, "mquad", ".vireo_done"),
-        vireo_log=os.path.join(OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo", "fit_mito_clones.log")
+        vireo_log=os.path.join(OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo", "fit_mito_clones.log"),
+        clone_assign=os.path.join(OUT_DIR, SAMPLE, "mquad", "mquad_mt", "vireo", "clone_assignments.tsv")
     params:
         mquad_out=os.path.join(OUT_DIR, SAMPLE, "mquad", "mquad_mt"),
         vireo_py=os.path.join(BASE_DIR, "fit_mito_clones.py")
