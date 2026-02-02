@@ -145,6 +145,7 @@ rule mgatk:
     threads: 16
     resources:
         mem_mb=64000
+        retry = 1
     log:
         os.path.join(OUT_DIR, SAMPLE, "logs", "mgatk.log")
     shell:
