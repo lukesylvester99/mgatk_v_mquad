@@ -45,6 +45,9 @@ message("out_dir:      ", out_dir)
 # --------
 # Read results_table robustly (your original logic)
 # --------
+
+message("reading results_table...")
+
 first_line <- readLines(path_in, n = 1)
 use_tab <- grepl("\t", first_line)
 
@@ -59,9 +62,13 @@ res <- read.table(
 
 colnames(res) <- gsub("\\.", "-", colnames(res))
 
+message("results_table is loaded.")
+
 # --------
 # Clone calling (unchanged)
 # --------
+
+message("splitting subclones...")
 subclones <- split_subclones(
   res,
   tree_depth = 4,
@@ -70,7 +77,9 @@ subclones <- split_subclones(
   plot_width = 4,
   plot_height= 3
 )
+message("Subclones assigned.")
 
+message("making subclones tsv file...")
 # Save clone assignments (portable)
 subclone_tsv <- file.path(out_dir, paste0("subclones_", sample, ".tsv"))
 write.table(
@@ -80,10 +89,13 @@ write.table(
   quote = FALSE,
   row.names = FALSE
 )
+message("subclones tsv written.")
 
 # --------
 # Annotated karyotype plot (unchanged)
 # --------
+
+message("making annotated karyotype...")
 annot_dt <- data.frame(
   cell  = subclones$cell,
   annot = paste0("Clone", subclones$subclone)
@@ -95,13 +107,19 @@ plot_karyo_annotated(
   annot_dt  = annot_dt
 )
 
+message("Annotated karyotype written.")
+
 # --------
 # Cancerous barcode list for downstream (epi clone IDs 2, 3, 4)
 # --------
-cnv_keep <- c(2, 3, 4)
+
+message("writing cancerous cell barcodes for mquad...")
+cnv_keep <- c(1, 2, 3, 4)
 cnv_cells <- subclones$cell[subclones$subclone %in% cnv_keep]
 
 cnv_tsv <- file.path(out_dir, paste0(sample, "_cells_for_mquad.tsv"))
-writeLines(c("cell_barcode", cnv_cells), con = cnv_tsv)
+cnv_cells <- sub("^cell-", "", cnv_cells) # remove "cell-" prefix if present
+
+writeLines(unique(cnv_cells), cnv_tsv)
 
 message("Done. Outputs written to: ", out_dir)

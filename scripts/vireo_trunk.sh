@@ -72,17 +72,15 @@ VCF_TRUNK="${OUTDIR}/cellSNP.base.filtered_to_mgatk_and_mquad.vcf.gz"
 # Build BED: chrM  (pos-1)  pos
 # Example line: 14783T>C  => pos=14783
 awk -v OFS="\t" -v CONTIG="${MT_CONTIG}" '
-  {
-    gsub(/\r/, "", $1)
+{
+  gsub(/\r/, "", $0)          # strip CR if present (harmless if not)
+  pos = $0
+  sub(/[^0-9].*$/, "", pos)  # keep leading numeric position only
+  if (pos ~ /^[0-9]+$/) {
+    p = pos + 0
+    if (p > 0) print CONTIG, p-1, p
   }
-  NF>=1 && $1 ~ /^[0-9]+[ACGT]>[ACGT]$/ {
-    pos = $1
-    sub(/[^0-9].*$/, "", pos)
-    if (pos ~ /^[0-9]+$/) {
-      p = pos + 0
-      if (p > 0) print CONTIG, p-1, p
-    }
-  }
+}
 ' "${MQUAD_PASSED}" | sort -u > "${EXCLUDE_BED}"
 
 echo "[INFO] Exclusion BED written: ${EXCLUDE_BED}"
